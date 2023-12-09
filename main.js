@@ -14,12 +14,18 @@ const getColoredString = (string, color) => {
 
   const colorAsNumber = colors[color]; 
 
-  if (colorAsNumber === undefined) {
+  if (!colorAsNumber) {
     throw new Error("Invalid color or not yet specified");
   } 
 
   return `\x1b[${colorAsNumber}m${string}\x1b[0m`;
 };
+
+const isStringLengthGreaterThan = (string, lengthThreshold) => {
+  return string.length > lengthThreshold
+};
+
+const isNumber = value => !isNaN(Number(value));
 
 const config = {
   columns: {
@@ -56,7 +62,7 @@ const handleListNotes = () => {
 
   db.all(sql, (error, rows) => {
     if (error) {
-      return log(error);
+      return log("Error when showing notes");
     }
 
     const tableHeaders = [getColoredString("id", "green"), getColoredString("title", "green"), getColoredString("content", "green")];
@@ -80,52 +86,23 @@ const insertNoteInDatabase = (title, content) => {
   });
 };
 
-const verifyTitle = title => {
-  if (title.trim().length > 100) {
-    log("The title is too big (max. 100 characters)");
-    return false;
-  }
-
-  return true;
-}
-
-const verifyContent = content => {
+const handleAddNote = (title, content) => {
+  const trimmedTitle = title.trim();
   const trimmedContent = content.trim();
 
+  if (isStringLengthGreaterThan(trimmedTitle, 100)) {
+    return log("The title is too big (max. 100 characters)");
+  }
+  
+  if (isStringLengthGreaterThan(trimmedContent, 255)) {
+    return log("The content is too big (max. 255 characters)");
+  }
+  
   if (!trimmedContent.length) {
-    log("The note must have content");
-    return false;
+    return log("The note must have content");
   }
 
-  if (trimmedContent.length > 255) {
-    log("The content is too big (max. 255 characters)");
-    return false;
-  }
-
-  return true;
-};
-
-const verifyId = id => {
-  const idAsNumber = Number(id);
-
-  if (idAsNumber <= 0) {
-    log("Id must be greater than 0");
-    return false;
-  }
-
-  if (!idAsNumber) {
-    log("Id must be a number");
-    return false;
-  }
-
-  return true;
-};
-
-const handleAddNote = (title, content) => {
-  if (!verifyTitle(title)) return;
-  if (!verifyContent(content)) return;
-
-  insertNoteInDatabase(title.trim(), content.trim());
+  insertNoteInDatabase(trimmedTitle, trimmedContent);
 };
 
 const deleteNoteInDatabase = id => {
@@ -143,7 +120,11 @@ const deleteNoteInDatabase = id => {
 };
 
 const handleDeleteNote = id => {
-  if (!verifyId(id)) return;
+  const trimmedId = id.trim();
+
+  if (!isNumber(id)) {
+    return log("Id must be a number");
+  }
 
   deleteNoteInDatabase(Number(id));
 };
@@ -177,11 +158,27 @@ const editNoteInDatabase = (title, content, id) => {
 };
 
 const handleEditNote = (id, title, content) => {
-  if (!verifyTitle(title)) return;
-  if (!verifyContent(content)) return; 
-  if (!verifyId(id)) return;
+  const trimmedId = id.trim();
+  const trimmedTitle = title.trim();
+  const trimmedContent = content.trim();
 
-  editNoteInDatabase(title.trim(), content.trim(), Number(id));
+  if (isStringLengthGreaterThan(trimmedTitle, 100)) {
+    return log("The title is too big (max. 100 characters)");
+  }
+  
+  if (isStringLengthGreaterThan(trimmedContent, 255)) {
+    return log("The content is too big (max. 255 characters)");
+  }
+
+  if (!trimmedContent.length) {
+    return log("The note must have content");
+  }
+ 
+  if (!isNumber(trimmedId)) {
+    return log("Id must be a number");
+  }
+
+  editNoteInDatabase(trimmedTitle, trimmedContent, Number(id));
 };
 
 program
