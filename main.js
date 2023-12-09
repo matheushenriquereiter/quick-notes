@@ -62,7 +62,7 @@ const handleListNotes = () => {
 
   db.all(sql, (error, rows) => {
     if (error) {
-      return log("Error when showing notes");
+      return log(getColoredString("Error when showing notes", "red"));
     }
 
     const tableHeaders = [getColoredString("id", "green"), getColoredString("title", "green"), getColoredString("content", "green")];
@@ -79,7 +79,7 @@ const insertNoteInDatabase = (title, content) => {
 
   db.run(sql, [title, content], error => {
     if (error) {
-      return log("Error when adding note");
+      return log(getColoredString("Error when adding note", "red"));
     }
 
     log("Note has been added successfully");
@@ -112,7 +112,7 @@ const deleteNoteInDatabase = id => {
 
   db.run(sql, id, error => {
     if (error) {
-      return log("Error when removing note");
+      return log(getColoredString("Error when removing note", "red"));
     }
 
     log("Note has been successfully removed");
@@ -136,7 +136,7 @@ const handleClearNotes = () => {
 
   db.run(sql, error => {
     if (error) {
-      return log("Error when clearing all notes");
+      return log(getColoredString("Error when clearing all notes", "red"));
     }
 
     log("Notes has been successfully cleaned");
@@ -150,7 +150,7 @@ const editNoteInDatabase = (title, content, id) => {
 
   db.run(sql, [title, content, id], error => {
     if (error) {
-      return log("Error when editing the note");
+      return log(getColoredString("Error when editing the note", "red"));
     }
 
     log("Notes has been successfully edited");
