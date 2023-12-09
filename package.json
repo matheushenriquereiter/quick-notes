@@ -8,7 +8,7 @@
   },
   "keywords": [],
   "author": "Matheus Henrique Reiter",
-  "license": "ISC",
+  "license": "LGPL-3.0-only",
   "dependencies": {
     "commander": "^11.1.0",
     "path": "^0.12.7",
