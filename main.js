@@ -190,21 +190,25 @@ program
   .description("A notes app for productive people");
 
 program.command("list")
+  .alias("l")
   .description("list all your notes")
   .action(handleListNotes);
 
 program.command("add")
+  .alias("a")
   .description("add a note")
   .argument("[title]", "Title of the note you want to add")
   .argument("<content>", "Content of the note you want to add")
   .action(handleAddNote);
 
 program.command("delete")
+  .alias("d")
   .description("remove a note")
   .argument("<id>", "Id of the note you want to remove")
   .action(handleDeleteNote);
 
 program.command("edit")
+  .alias("e")
   .description("edit a note")
   .argument("<id>", "Id of the note you want to edit")
   .argument("[title]", "New title for the note you want to edit")
@@ -212,6 +216,7 @@ program.command("edit")
   .action(handleEditNote);
 
 program.command("clear")
+  .alias("c")
   .description("clear all notes")
   .action(handleClearNotes);
 
