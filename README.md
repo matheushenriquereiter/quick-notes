@@ -9,8 +9,12 @@
 <ol>
   <li>Clone the repository.</li>
   <li>Open your terminal.</li>
-  <li>Run the following command inside the cloned repository to download quick-notes globally to your system:</li>
+  <li>Run the following commands inside the cloned repository to download quick-notes globally to your system:</li>
 </ol>
+
+<pre>
+  <code>npm install</code>
+</pre>
 
 <pre>
   <code>npm install -g .</code>
