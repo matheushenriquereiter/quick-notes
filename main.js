@@ -27,7 +27,7 @@ const isStringLengthGreaterThan = (string, lengthThreshold) => {
 
 const isNumber = value => !isNaN(Number(value));
 
-const config = {
+const tableConfig = {
   columns: {
     0: { width: 10 },
     1: { width: 18 },
@@ -55,6 +55,22 @@ const config = {
     }
   };
 
+const verifyNote = (title, content) => {
+  if (isStringLengthGreaterThan(title, 100)) {
+    return log("The title is too big (max. 100 characters)");
+  }
+  
+  if (isStringLengthGreaterThan(content, 255)) {
+    return log("The content is too big (max. 255 characters)");
+  }
+  
+  if (!content.length) {
+    return log("The note must have content");
+  }
+
+  return true;
+}
+
 const handleListNotes = () => {
   const sql = `
     SELECT * FROM notes;
@@ -68,7 +84,7 @@ const handleListNotes = () => {
     const tableHeaders = [getColoredString("id", "green"), getColoredString("title", "green"), getColoredString("content", "green")];
     const notesData = rows.map(row => Object.values(row));
     
-    log(table([tableHeaders, ...notesData], config));
+    log(table([tableHeaders, ...notesData], tableConfig));
   });
 };
 
@@ -90,17 +106,7 @@ const handleAddNote = (title, content) => {
   const trimmedTitle = title.trim();
   const trimmedContent = content.trim();
 
-  if (isStringLengthGreaterThan(trimmedTitle, 100)) {
-    return log("The title is too big (max. 100 characters)");
-  }
-  
-  if (isStringLengthGreaterThan(trimmedContent, 255)) {
-    return log("The content is too big (max. 255 characters)");
-  }
-  
-  if (!trimmedContent.length) {
-    return log("The note must have content");
-  }
+  if (!verifyNote(trimmedTitle, trimmedContent)) return;
 
   insertNoteInDatabase(trimmedTitle, trimmedContent);
 };
@@ -162,18 +168,8 @@ const handleEditNote = (id, title, content) => {
   const trimmedTitle = title.trim();
   const trimmedContent = content.trim();
 
-  if (isStringLengthGreaterThan(trimmedTitle, 100)) {
-    return log("The title is too big (max. 100 characters)");
-  }
-  
-  if (isStringLengthGreaterThan(trimmedContent, 255)) {
-    return log("The content is too big (max. 255 characters)");
-  }
+  if (!verifyNote(trimmedTitle, trimmedContent)) return;
 
-  if (!trimmedContent.length) {
-    return log("The note must have content");
-  }
- 
   if (!isNumber(trimmedId)) {
     return log("Id must be a number");
   }
