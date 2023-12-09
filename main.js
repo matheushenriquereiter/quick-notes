@@ -57,15 +57,18 @@ const tableConfig = {
 
 const verifyNote = (title, content) => {
   if (isStringLengthGreaterThan(title, 100)) {
-    return log("The title is too big (max. 100 characters)");
+    log("The title is too big (max. 100 characters)");
+    return false;
   }
   
   if (isStringLengthGreaterThan(content, 255)) {
-    return log("The content is too big (max. 255 characters)");
+    log("The content is too big (max. 255 characters)");
+    return false;
   }
   
   if (!content.length) {
-    return log("The note must have content");
+    log("The note must have content");
+    return false;
   }
 
   return true;
