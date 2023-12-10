@@ -74,10 +74,16 @@ const verifyNote = (title, content) => {
   return true;
 }
 
-const handleListNotes = () => {
-  const sql = `
-    SELECT * FROM notes;
-  `
+const handleListNotes = options => {
+  if (options.limit) {
+    if (!isNumber(options.limit)) {
+      return log("Amount must be a number");
+    }
+  }
+
+  const sql = options.limit 
+    ? `SELECT * FROM notes LIMIT ${options.limit};`
+    : "SELECT * FROM notes;";
 
   db.all(sql, (error, rows) => {
     if (error) {
@@ -105,7 +111,7 @@ const insertNoteInDatabase = (title, content) => {
   });
 };
 
-const handleAddNote = (title, content) => {
+const handleAddNote = (title, content, options) => {
   const trimmedTitle = title.trim();
   const trimmedContent = content.trim();
 
@@ -187,6 +193,7 @@ program
 
 program.command("list")
   .alias("l")
+  .option("-l, --limit <amount>", "Limit the number of notes shown")
   .description("list all your notes")
   .action(handleListNotes);
 
