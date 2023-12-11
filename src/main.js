@@ -4,23 +4,9 @@ import { program } from "commander";
 import { table } from "table";
 import { tableConfig } from "./tableConfig.js";
 import { db } from "./connection.js";
+import chalk from "chalk";
 
 const log = (...values) => console.log(...values);
-
-const getColoredString = (string, color) => {
-  const colors = {
-    red: 31,
-    green: 32,
-  };
-
-  const colorAsNumber = colors[color];
-
-  if (!colorAsNumber) {
-    throw new Error("Invalid color or not yet specified");
-  }
-
-  return `\x1b[${colorAsNumber}m${string}\x1b[0m`;
-};
 
 const isStringLengthGreaterThan = (string, lengthThreshold) => {
   return string.length > lengthThreshold;
@@ -60,13 +46,13 @@ const handleListNotes = options => {
 
   db.all(sql, (error, rows) => {
     if (error) {
-      return log(getColoredString("Error when showing notes", "red"));
+      return log(chalk.red("Error when showing notes"));
     }
 
     const tableHeaders = [
-      getColoredString("id", "green"),
-      getColoredString("title", "green"),
-      getColoredString("content", "green"),
+      chalk.green("id"),
+      chalk.green("title"),
+      chalk.green("content"),
     ];
     const notesData = rows.map(row => Object.values(row));
 
@@ -81,14 +67,14 @@ const insertNoteInDatabase = (title, content) => {
 
   db.run(sql, [title, content], error => {
     if (error) {
-      return log(getColoredString("Error when adding note", "red"));
+      return log(chalk.red("Error when adding note"));
     }
 
     log("Note has been added successfully");
   });
 };
 
-const handleAddNote = (title, content, options) => {
+const handleAddNote = (title, content) => {
   const trimmedTitle = title.trim();
   const trimmedContent = content.trim();
 
@@ -104,7 +90,7 @@ const deleteNoteInDatabase = id => {
 
   db.run(sql, id, error => {
     if (error) {
-      return log(getColoredString("Error when removing note", "red"));
+      return log(chalk.red("Error when removing note"));
     }
 
     log("Note has been successfully removed");
@@ -114,11 +100,11 @@ const deleteNoteInDatabase = id => {
 const handleDeleteNote = id => {
   const trimmedId = id.trim();
 
-  if (!isNumber(id)) {
+  if (!isNumber(trimmedId)) {
     return log("Id must be a number");
   }
 
-  deleteNoteInDatabase(Number(id));
+  deleteNoteInDatabase(Number(trimmedId));
 };
 
 const handleClearNotes = () => {
@@ -128,7 +114,7 @@ const handleClearNotes = () => {
 
   db.run(sql, error => {
     if (error) {
-      return log(getColoredString("Error when clearing all notes", "red"));
+      return log(chalk.red("Error when clearing all notes"));
     }
 
     log("Notes has been successfully cleaned");
@@ -142,7 +128,7 @@ const editNoteInDatabase = (title, content, id) => {
 
   db.run(sql, [title, content, id], error => {
     if (error) {
-      return log(getColoredString("Error when editing the note", "red"));
+      return log(chalk.red("Error when editing the note"));
     }
 
     log("Notes has been successfully edited");
