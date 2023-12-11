@@ -8,19 +8,15 @@ import chalk from "chalk";
 
 const log = (...values) => console.log(...values);
 
-const isStringLengthGreaterThan = (string, lengthThreshold) => {
-  return string.length > lengthThreshold;
-};
-
 const isNumber = value => !isNaN(Number(value));
 
 const verifyNote = (title, content) => {
-  if (isStringLengthGreaterThan(title, 100)) {
+  if (title > 100) {
     log("The title is too big (max. 100 characters)");
     return false;
   }
 
-  if (isStringLengthGreaterThan(content, 255)) {
+  if (content > 255) {
     log("The content is too big (max. 255 characters)");
     return false;
   }
