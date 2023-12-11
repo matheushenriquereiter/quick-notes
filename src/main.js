@@ -2,77 +2,50 @@
 
 import { program } from "commander";
 import { table } from "table";
+import { tableConfig } from "./tableConfig.js";
 import { db } from "./connection.js";
 
 const log = (...values) => console.log(...values);
 
 const getColoredString = (string, color) => {
   const colors = {
-    "red": 31,
-    "green": 32
-  }
+    red: 31,
+    green: 32,
+  };
 
-  const colorAsNumber = colors[color]; 
+  const colorAsNumber = colors[color];
 
   if (!colorAsNumber) {
     throw new Error("Invalid color or not yet specified");
-  } 
+  }
 
   return `\x1b[${colorAsNumber}m${string}\x1b[0m`;
 };
 
 const isStringLengthGreaterThan = (string, lengthThreshold) => {
-  return string.length > lengthThreshold
+  return string.length > lengthThreshold;
 };
 
 const isNumber = value => !isNaN(Number(value));
-
-const tableConfig = {
-  columns: {
-    0: { width: 10 },
-    1: { width: 18 },
-    2: { width: 34 }
-  },
-  border: {
-      topBody: `-`,
-      topJoin: `+`,
-      topLeft: `+`,
-      topRight: `+`,
-
-      bottomBody: `-`,
-      bottomJoin: `+`,
-      bottomLeft: `+`,
-      bottomRight: `+`,
-
-      bodyLeft: `|`,
-      bodyRight: `|`,
-      bodyJoin: `|`,
-
-      joinBody: `-`,
-      joinLeft: `+`,
-      joinRight: `+`,
-      joinJoin: `+`
-    }
-  };
 
 const verifyNote = (title, content) => {
   if (isStringLengthGreaterThan(title, 100)) {
     log("The title is too big (max. 100 characters)");
     return false;
   }
-  
+
   if (isStringLengthGreaterThan(content, 255)) {
     log("The content is too big (max. 255 characters)");
     return false;
   }
-  
+
   if (!content.length) {
     log("The note must have content");
     return false;
   }
 
   return true;
-}
+};
 
 const handleListNotes = options => {
   if (options.limit) {
@@ -81,7 +54,7 @@ const handleListNotes = options => {
     }
   }
 
-  const sql = options.limit 
+  const sql = options.limit
     ? `SELECT * FROM notes LIMIT ${options.limit};`
     : "SELECT * FROM notes;";
 
@@ -90,9 +63,13 @@ const handleListNotes = options => {
       return log(getColoredString("Error when showing notes", "red"));
     }
 
-    const tableHeaders = [getColoredString("id", "green"), getColoredString("title", "green"), getColoredString("content", "green")];
+    const tableHeaders = [
+      getColoredString("id", "green"),
+      getColoredString("title", "green"),
+      getColoredString("content", "green"),
+    ];
     const notesData = rows.map(row => Object.values(row));
-    
+
     log(table([tableHeaders, ...notesData], tableConfig));
   });
 };
@@ -100,7 +77,7 @@ const handleListNotes = options => {
 const insertNoteInDatabase = (title, content) => {
   const sql = `
     INSERT INTO notes (title, content) VALUES (?, ?);
-  `
+  `;
 
   db.run(sql, [title, content], error => {
     if (error) {
@@ -147,7 +124,7 @@ const handleDeleteNote = id => {
 const handleClearNotes = () => {
   const sql = `
     DELETE FROM notes;
-  `
+  `;
 
   db.run(sql, error => {
     if (error) {
@@ -155,7 +132,7 @@ const handleClearNotes = () => {
     }
 
     log("Notes has been successfully cleaned");
-  })
+  });
 };
 
 const editNoteInDatabase = (title, content, id) => {
@@ -191,26 +168,30 @@ program
   .version("1.0.0")
   .description("A notes app for productive people");
 
-program.command("list")
+program
+  .command("list")
   .alias("l")
   .option("-l, --limit <amount>", "Limit the number of notes shown")
   .description("list all your notes")
   .action(handleListNotes);
 
-program.command("add")
+program
+  .command("add")
   .alias("a")
   .description("add a note")
   .argument("[title]", "Title of the note you want to add")
   .argument("<content>", "Content of the note you want to add")
   .action(handleAddNote);
 
-program.command("delete")
+program
+  .command("delete")
   .alias("d")
   .description("remove a note")
   .argument("<id>", "Id of the note you want to remove")
   .action(handleDeleteNote);
 
-program.command("edit")
+program
+  .command("edit")
   .alias("e")
   .description("edit a note")
   .argument("<id>", "Id of the note you want to edit")
@@ -218,10 +199,10 @@ program.command("edit")
   .argument("<content>", "New content for the note you want to edit")
   .action(handleEditNote);
 
-program.command("clear")
+program
+  .command("clear")
   .alias("c")
   .description("clear all notes")
   .action(handleClearNotes);
 
 program.parse();
-
