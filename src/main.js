@@ -1,6 +1,6 @@
 #! /bin/node
 
-import { program } from "commander";
+import { program, Option } from "commander";
 import { table } from "table";
 import { tableConfig } from "./tableConfig.js";
 import { db } from "./connection.js";
@@ -29,54 +29,71 @@ const verifyNote = (title, content) => {
   return true;
 };
 
-const handleListNotes = options => {
-  if (options.limit) {
-    if (!isNumber(options.limit)) {
+const handleListNotes = ({ limit }) => {
+  if (limit) {
+    if (!isNumber(limit)) {
       return log("Amount must be a number");
     }
   }
 
-  const sql = options.limit
-    ? `SELECT * FROM notes LIMIT ${options.limit};`
-    : "SELECT * FROM notes;";
+  const sql = limit
+    ? `SELECT * FROM notes ORDER BY priority DESC LIMIT ${limit};`
+    : "SELECT * FROM notes ORDER BY priority DESC;";
 
   db.all(sql, (error, rows) => {
     if (error) {
-      return log(chalk.red("Error when showing notes"));
+      return log(error);
     }
+
+    const prioritiesAsString = {
+      1: chalk.green("low"),
+      2: chalk.yellow("medium"),
+      3: chalk.red("high"),
+    };
 
     const tableHeaders = [
       chalk.green("id"),
       chalk.green("title"),
       chalk.green("content"),
+      chalk.green("priority"),
     ];
-    const notesData = rows.map(row => Object.values(row));
+    const notesData = rows.map(rows => {
+      const [id, title, content, priority] = Object.values(rows);
+
+      return [id, title, content, prioritiesAsString[priority]];
+    });
 
     log(table([tableHeaders, ...notesData], tableConfig));
   });
 };
 
-const insertNoteInDatabase = (title, content) => {
+const insertNoteInDatabase = (title, content, priority) => {
+  const prioritiesAsNumber = {
+    low: 1,
+    medium: 2,
+    high: 3,
+  };
+
   const sql = `
-    INSERT INTO notes (title, content) VALUES (?, ?);
+    INSERT INTO notes (title, content, priority) VALUES (?, ?, ?);
   `;
 
-  db.run(sql, [title, content], error => {
+  db.run(sql, [title, content, prioritiesAsNumber[priority]], error => {
     if (error) {
-      return log(chalk.red("Error when adding note"));
+      return log(error);
     }
 
     log("Note has been added successfully");
   });
 };
 
-const handleAddNote = (title, content) => {
+const handleAddNote = (title, content, { priority }) => {
   const trimmedTitle = title.trim();
   const trimmedContent = content.trim();
 
   if (!verifyNote(trimmedTitle, trimmedContent)) return;
 
-  insertNoteInDatabase(trimmedTitle, trimmedContent);
+  insertNoteInDatabase(trimmedTitle, trimmedContent, priority);
 };
 
 const deleteNoteInDatabase = id => {
@@ -86,7 +103,7 @@ const deleteNoteInDatabase = id => {
 
   db.run(sql, id, error => {
     if (error) {
-      return log(chalk.red("Error when removing note"));
+      return log(error);
     }
 
     log("Note has been successfully removed");
@@ -110,7 +127,7 @@ const handleClearNotes = () => {
 
   db.run(sql, error => {
     if (error) {
-      return log(chalk.red("Error when clearing all notes"));
+      return log(error);
     }
 
     log("Notes has been successfully cleaned");
@@ -124,7 +141,7 @@ const editNoteInDatabase = (title, content, id) => {
 
   db.run(sql, [title, content, id], error => {
     if (error) {
-      return log(chalk.red("Error when editing the note"));
+      return log(error);
     }
 
     log("Notes has been successfully edited");
@@ -160,6 +177,14 @@ program
 program
   .command("add")
   .alias("a")
+  .addOption(
+    new Option(
+      "-p, --priority <priority>",
+      "Set the priority level of your note"
+    )
+      .choices(["low", "medium", "high"])
+      .default("medium")
+  )
   .description("add a note")
   .argument("[title]", "Title of the note you want to add")
   .argument("<content>", "Content of the note you want to add")

@@ -9,7 +9,7 @@ const pathname = path.join(__dirname, "..", "app.db");
 
 const createNotesTable = db => {
   const sql = `
-    CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, title TEXT, content TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, title TEXT, content TEXT NOT NULL, priority INTEGER NOT NULL);
   `;
 
   db.exec(sql);
