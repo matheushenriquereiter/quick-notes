@@ -10,6 +10,25 @@ const log = (...values) => console.log(...values);
 
 const isNumber = value => !isNaN(Number(value));
 
+const prioritiesAsString = {
+  1: chalk.green("low"),
+  2: chalk.yellow("medium"),
+  3: chalk.red("high"),
+};
+
+const prioritiesAsNumber = {
+  low: 1,
+  medium: 2,
+  high: 3,
+};
+
+const tableHeaders = [
+  chalk.green("id"),
+  chalk.green("title"),
+  chalk.green("content"),
+  chalk.green("priority"),
+];
+
 const verifyNote = (title, content) => {
   if (title > 100) {
     log("The title is too big (max. 100 characters)");
@@ -29,6 +48,16 @@ const verifyNote = (title, content) => {
   return true;
 };
 
+const showNotesInTable = notes => {
+  const notesAsArrays = notes.map(note => {
+    const [id, title, content, priority] = Object.values(note);
+
+    return [id, title, content, prioritiesAsString[priority]];
+  });
+
+  log(table([tableHeaders, ...notesAsArrays], tableConfig));
+};
+
 const handleListNotes = ({ limit }) => {
   if (limit) {
     if (!isNumber(limit)) {
@@ -45,35 +74,11 @@ const handleListNotes = ({ limit }) => {
       return log(error);
     }
 
-    const prioritiesAsString = {
-      1: chalk.green("low"),
-      2: chalk.yellow("medium"),
-      3: chalk.red("high"),
-    };
-
-    const tableHeaders = [
-      chalk.green("id"),
-      chalk.green("title"),
-      chalk.green("content"),
-      chalk.green("priority"),
-    ];
-    const notesData = rows.map(rows => {
-      const [id, title, content, priority] = Object.values(rows);
-
-      return [id, title, content, prioritiesAsString[priority]];
-    });
-
-    log(table([tableHeaders, ...notesData], tableConfig));
+    showNotesInTable(rows);
   });
 };
 
 const insertNoteInDatabase = (title, content, priority) => {
-  const prioritiesAsNumber = {
-    low: 1,
-    medium: 2,
-    high: 3,
-  };
-
   const sql = `
     INSERT INTO notes (title, content, priority) VALUES (?, ?, ?);
   `;
@@ -162,6 +167,27 @@ const handleEditNote = (id, title, content) => {
   editNoteInDatabase(trimmedTitle, trimmedContent, Number(id));
 };
 
+const handleSearchNotes = value => {
+  const sql = `
+    SELECT * FROM notes;
+  `;
+
+  db.all(sql, (error, rows) => {
+    if (error) {
+      return console.log(error);
+    }
+
+    const matchedNotes = rows.filter(
+      ({ id, title, content }) =>
+        String(id).includes(value) ||
+        title.includes(value) ||
+        content.includes(value)
+    );
+
+    showNotesInTable(matchedNotes);
+  });
+};
+
 program
   .name("quick-notes")
   .version("1.0.0")
@@ -170,8 +196,8 @@ program
 program
   .command("list")
   .alias("l")
+  .description("List all your notes")
   .option("-l, --limit <amount>", "Limit the number of notes shown")
-  .description("list all your notes")
   .action(handleListNotes);
 
 program
@@ -185,7 +211,7 @@ program
       .choices(["low", "medium", "high"])
       .default("medium")
   )
-  .description("add a note")
+  .description("Add a note")
   .argument("[title]", "Title of the note you want to add")
   .argument("<content>", "Content of the note you want to add")
   .action(handleAddNote);
@@ -193,14 +219,14 @@ program
 program
   .command("delete")
   .alias("d")
-  .description("remove a note")
+  .description("Remove a note")
   .argument("<id>", "Id of the note you want to remove")
   .action(handleDeleteNote);
 
 program
   .command("edit")
   .alias("e")
-  .description("edit a note")
+  .description("Edit a note")
   .argument("<id>", "Id of the note you want to edit")
   .argument("[title]", "New title for the note you want to edit")
   .argument("<content>", "New content for the note you want to edit")
@@ -209,7 +235,14 @@ program
 program
   .command("clear")
   .alias("c")
-  .description("clear all notes")
+  .description("Clear all notes")
   .action(handleClearNotes);
+
+program
+  .command("search")
+  .alias("s")
+  .description("Search for notes")
+  .argument("<value>", "Value to look for in notes")
+  .action(handleSearchNotes);
 
 program.parse();
