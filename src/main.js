@@ -82,13 +82,15 @@ const getNotesTable = notes => {
   return table([tableHeaders, ...notesAsArrays], tableConfig);
 };
 
-const handleListNotes = async ({ limit }) => {
-  if (!isNumber(limit)) {
-    return log("Limit amount must be a number");
+const handleListNotes = async args => {
+  if (args.hasOwnProperty("limit")) {
+    if (!isNumber(args.limit)) {
+      return log("Limit amount must be a number");
+    }
   }
 
-  const sql = limit
-    ? `SELECT * FROM notes ORDER BY priority DESC LIMIT ${limit};`
+  const sql = args.limit
+    ? `SELECT * FROM notes ORDER BY priority DESC LIMIT ${args.limit};`
     : "SELECT * FROM notes ORDER BY priority DESC;";
 
   const [error, notes] = await to(query(sql));
