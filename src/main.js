@@ -33,7 +33,11 @@ const run = (sql, values) =>
 
 const log = (...values) => console.log(...values);
 
-const isNumber = value => !isNaN(Number(value));
+const isNumber = value => {
+  if (!String(value)) return false;
+
+  return !isNaN(Number(value));
+};
 
 const verifyNote = (title, content) => {
   if (title > 100) {
@@ -70,18 +74,17 @@ const getNotesTable = notes => {
 
   const notesAsArrays = notes.map(note => {
     const [id, title, content, priority] = Object.values(note);
+    const priorityAsString = prioritiesAsString[priority];
 
-    return [id, title, content, prioritiesAsString[priority]];
+    return [id, title, content, priorityAsString];
   });
 
   return table([tableHeaders, ...notesAsArrays], tableConfig);
 };
 
 const handleListNotes = async ({ limit }) => {
-  if (limit) {
-    if (!isNumber(limit)) {
-      return log("Amount must be a number");
-    }
+  if (!isNumber(limit)) {
+    return log("Limit amount must be a number");
   }
 
   const sql = limit
