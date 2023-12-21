@@ -6,6 +6,31 @@ import { tableConfig } from "./tableConfig.js";
 import { db } from "./connection.js";
 import chalk from "chalk";
 
+const to = promise =>
+  promise.then(data => [null, data]).catch(error => [error, null]);
+
+const query = sql =>
+  new Promise((resolve, reject) => {
+    db.all(sql, (error, rows) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(rows);
+    });
+  });
+
+const run = (sql, values) =>
+  new Promise((resolve, reject) =>
+    db.run(sql, values, (error, rows) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(rows);
+    })
+  );
+
 const log = (...values) => console.log(...values);
 
 const isNumber = value => !isNaN(Number(value));
@@ -29,7 +54,7 @@ const verifyNote = (title, content) => {
   return true;
 };
 
-const showNotesInTable = notes => {
+const getNotesTable = notes => {
   const prioritiesAsString = {
     1: chalk.green("low"),
     2: chalk.yellow("medium"),
@@ -49,10 +74,10 @@ const showNotesInTable = notes => {
     return [id, title, content, prioritiesAsString[priority]];
   });
 
-  log(table([tableHeaders, ...notesAsArrays], tableConfig));
+  return table([tableHeaders, ...notesAsArrays], tableConfig);
 };
 
-const handleListNotes = ({ limit }) => {
+const handleListNotes = async ({ limit }) => {
   if (limit) {
     if (!isNumber(limit)) {
       return log("Amount must be a number");
@@ -63,33 +88,37 @@ const handleListNotes = ({ limit }) => {
     ? `SELECT * FROM notes ORDER BY priority DESC LIMIT ${limit};`
     : "SELECT * FROM notes ORDER BY priority DESC;";
 
-  db.all(sql, (error, rows) => {
-    if (error) {
-      return log(error);
-    }
+  const [error, notes] = await to(query(sql));
 
-    showNotesInTable(rows);
-  });
+  if (error) {
+    return log(error);
+  }
+
+  const notesTable = getNotesTable(notes);
+
+  log(notesTable);
 };
 
-const insertNoteInDatabase = (title, content, priority) => {
+const insertNoteInDatabase = async (title, content, priority) => {
   const prioritiesAsNumber = {
     low: 1,
     medium: 2,
     high: 3,
   };
 
+  const priorityAsNumber = prioritiesAsNumber[priority];
+
   const sql = `
     INSERT INTO notes (title, content, priority) VALUES (?, ?, ?);
   `;
 
-  db.run(sql, [title, content, prioritiesAsNumber[priority]], error => {
-    if (error) {
-      return log(error);
-    }
+  const [error] = await to(run(sql, [title, content, priorityAsNumber]));
 
-    log("Note has been added successfully");
-  });
+  if (error) {
+    return log(error);
+  }
+
+  log("Note has been added successfully");
 };
 
 const handleAddNote = (title, content, { priority }) => {
@@ -101,18 +130,18 @@ const handleAddNote = (title, content, { priority }) => {
   insertNoteInDatabase(trimmedTitle, trimmedContent, priority);
 };
 
-const deleteNoteInDatabase = id => {
+const deleteNoteInDatabase = async id => {
   const sql = `
     DELETE FROM notes WHERE id = ?;
   `;
 
-  db.run(sql, id, error => {
-    if (error) {
-      return log(error);
-    }
+  const [error] = await to(run(sql, [id]));
 
-    log("Note has been successfully removed");
-  });
+  if (error) {
+    return log(error);
+  }
+
+  log("Note has been successfully removed");
 };
 
 const handleDeleteNote = id => {
@@ -125,32 +154,32 @@ const handleDeleteNote = id => {
   deleteNoteInDatabase(Number(trimmedId));
 };
 
-const handleClearNotes = () => {
+const handleClearNotes = async () => {
   const sql = `
     DELETE FROM notes;
   `;
 
-  db.run(sql, error => {
-    if (error) {
-      return log(error);
-    }
+  const [error] = await to(run(sql));
 
-    log("Notes has been successfully cleaned");
-  });
+  if (error) {
+    return log(error);
+  }
+
+  log("Notes has been successfully cleaned");
 };
 
-const editNoteInDatabase = (title, content, id) => {
+const editNoteInDatabase = async (title, content, id) => {
   const sql = `
     UPDATE notes SET title = ?, content = ? WHERE id = ?;
   `;
 
-  db.run(sql, [title, content, id], error => {
-    if (error) {
-      return log(error);
-    }
+  const [error] = await to(run(sql, [title, content, id]));
 
-    log("Notes has been successfully edited");
-  });
+  if (error) {
+    return log(error);
+  }
+
+  log("Notes has been successfully edited");
 };
 
 const handleEditNote = (id, title, content) => {
@@ -167,26 +196,30 @@ const handleEditNote = (id, title, content) => {
   editNoteInDatabase(trimmedTitle, trimmedContent, Number(id));
 };
 
-const handleSearchNotes = (value, { first }) => {
+const handleSearchNotes = async (value, { first }) => {
   const sql = `
     SELECT * FROM notes;
   `;
 
-  db.all(sql, (error, rows) => {
-    if (error) {
-      return log(error);
-    }
+  const [error, notes] = await to(query(sql));
 
-    const matchedNotes = rows.filter(({ id, title, content }) => {
-      if (String(id).includes(value)) return true;
+  if (error) {
+    return log(error);
+  }
 
-      if (title.includes(value)) return true;
+  const matchedNotes = notes.filter(({ id, title, content }) => {
+    if (String(id).includes(value)) return true;
 
-      if (content.includes(value)) return true;
-    });
+    if (title.includes(value)) return true;
 
-    showNotesInTable(first ? [matchedNotes[0]] : matchedNotes);
+    if (content.includes(value)) return true;
+
+    return false;
   });
+
+  const notesTable = getNotesTable(first ? [matchedNotes[0]] : matchedNotes);
+
+  log(notesTable);
 };
 
 program
