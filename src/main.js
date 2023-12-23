@@ -9,28 +9,6 @@ import chalk from "chalk";
 const to = promise =>
   promise.then(data => [null, data]).catch(error => [error, null]);
 
-const query = sql =>
-  new Promise((resolve, reject) => {
-    db.all(sql, (error, rows) => {
-      if (error) {
-        return reject(error);
-      }
-
-      resolve(rows);
-    });
-  });
-
-const run = (sql, values) =>
-  new Promise((resolve, reject) =>
-    db.run(sql, values, (error, rows) => {
-      if (error) {
-        return reject(error);
-      }
-
-      resolve(rows);
-    })
-  );
-
 const log = (...values) => console.log(...values);
 
 const isNumber = value => {
@@ -93,7 +71,7 @@ const handleListNotes = async args => {
     ? `SELECT * FROM notes ORDER BY priority DESC LIMIT ${args.limit};`
     : "SELECT * FROM notes ORDER BY priority DESC;";
 
-  const [error, notes] = await to(query(sql));
+  const [error, notes] = await to(db.all(sql));
 
   if (error) {
     return log(error);
@@ -117,7 +95,7 @@ const insertNoteInDatabase = async (title, content, priority) => {
     INSERT INTO notes (title, content, priority) VALUES (?, ?, ?);
   `;
 
-  const [error] = await to(run(sql, [title, content, priorityAsNumber]));
+  const [error] = await to(db.run(sql, [title, content, priorityAsNumber]));
 
   if (error) {
     return log(error);
@@ -140,7 +118,7 @@ const deleteNoteInDatabase = async id => {
     DELETE FROM notes WHERE id = ?;
   `;
 
-  const [error] = await to(run(sql, [id]));
+  const [error] = await to(db.run(sql, [id]));
 
   if (error) {
     return log(error);
@@ -164,7 +142,7 @@ const handleClearNotes = async () => {
     DELETE FROM notes;
   `;
 
-  const [error] = await to(run(sql));
+  const [error] = await to(db.run(sql));
 
   if (error) {
     return log(error);
@@ -178,7 +156,7 @@ const editNoteInDatabase = async (title, content, id) => {
     UPDATE notes SET title = ?, content = ? WHERE id = ?;
   `;
 
-  const [error] = await to(run(sql, [title, content, id]));
+  const [error] = await to(db.run(sql, [title, content, id]));
 
   if (error) {
     return log(error);
@@ -206,7 +184,7 @@ const handleSearchNotes = async (value, { first }) => {
     SELECT * FROM notes;
   `;
 
-  const [error, notes] = await to(query(sql));
+  const [error, notes] = await to(db.all(sql));
 
   if (error) {
     return log(error);

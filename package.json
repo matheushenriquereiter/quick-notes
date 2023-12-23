@@ -14,6 +14,7 @@
     "commander": "^11.1.0",
     "path": "^0.12.7",
     "promised-sqlite3": "^2.1.0",
+    "sqlite": "^5.1.1",
     "sqlite3": "^5.1.6",
     "table": "^6.8.1"
   },

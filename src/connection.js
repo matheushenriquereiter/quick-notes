@@ -1,4 +1,5 @@
 import sqlite3 from "sqlite3";
+import { open } from "sqlite";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -7,21 +8,23 @@ const __dirname = path.dirname(__filename);
 
 const pathname = path.join(__dirname, "..", "app.db");
 
-const createNotesTable = db => {
+const createNotesTable = async db => {
   const sql = `
     CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, title TEXT, content TEXT NOT NULL, priority INTEGER NOT NULL);
   `;
 
-  db.exec(sql);
+  await db.exec(sql);
 };
 
-const createDatabaseConnection = () => {
-  const db = new sqlite3.Database(pathname, error => {
-    if (error) return console.log(error);
+const createDatabaseConnection = async () => {
+  const db = await open({
+    filename: pathname,
+    driver: sqlite3.Database,
   });
 
-  createNotesTable(db);
+  await createNotesTable(db);
+
   return db;
 };
 
-export const db = createDatabaseConnection();
+export const db = await createDatabaseConnection();
