@@ -12,23 +12,23 @@ const to = promise =>
 const log = (...values) => console.log(...values);
 
 const isNumber = value => {
-  if (!String(value)) return false;
+  if (!String(value).trim()) return false;
 
   return !isNaN(Number(value));
 };
 
-const verifyNote = (title, content) => {
-  if (title > 100) {
+const isNoteValid = (title, content) => {
+  if (title.trim() > 100) {
     log("The title is too big (max. 100 characters)");
     return false;
   }
 
-  if (content > 255) {
+  if (content.trim() > 255) {
     log("The content is too big (max. 255 characters)");
     return false;
   }
 
-  if (!content.length) {
+  if (!content.trim().length) {
     log("The note must have content");
     return false;
   }
@@ -105,12 +105,9 @@ const insertNoteInDatabase = async (title, content, priority) => {
 };
 
 const handleAddNote = (title, content, { priority }) => {
-  const trimmedTitle = title.trim();
-  const trimmedContent = content.trim();
+  if (!isNoteValid(title, content)) return;
 
-  if (!verifyNote(trimmedTitle, trimmedContent)) return;
-
-  insertNoteInDatabase(trimmedTitle, trimmedContent, priority);
+  insertNoteInDatabase(title.trim(), content.trim(), priority);
 };
 
 const deleteNoteInDatabase = async id => {
@@ -128,13 +125,11 @@ const deleteNoteInDatabase = async id => {
 };
 
 const handleDeleteNote = id => {
-  const trimmedId = id.trim();
-
-  if (!isNumber(trimmedId)) {
+  if (!isNumber(id)) {
     return log("Id must be a number");
   }
 
-  deleteNoteInDatabase(Number(trimmedId));
+  deleteNoteInDatabase(id.trim());
 };
 
 const handleClearNotes = async () => {
@@ -166,17 +161,13 @@ const editNoteInDatabase = async (title, content, id) => {
 };
 
 const handleEditNote = (id, title, content) => {
-  const trimmedId = id.trim();
-  const trimmedTitle = title.trim();
-  const trimmedContent = content.trim();
+  if (!isNoteValid(title, content)) return;
 
-  if (!verifyNote(trimmedTitle, trimmedContent)) return;
-
-  if (!isNumber(trimmedId)) {
+  if (!isNumber(id)) {
     return log("Id must be a number");
   }
 
-  editNoteInDatabase(trimmedTitle, trimmedContent, Number(id));
+  editNoteInDatabase(title.trim(), content.trim(), id.trim());
 };
 
 const handleSearchNotes = async (value, { first }) => {
@@ -208,7 +199,7 @@ const handleSearchNotes = async (value, { first }) => {
 program
   .name("quick-notes")
   .version("1.0.0")
-  .description("A notes app for productive people");
+  .description("A notes app for productive people.");
 
 program
   .command("list")
